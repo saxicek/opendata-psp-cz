@@ -1,4 +1,8 @@
+- pole rok ve formátu datumu by mělo být na 4 platné číslice, aby byl rok stanoven přesně
+- některé řetězce obsahují sekvenci \r\\\n - je možné ji odstranit?
 - typ_organu obsahuje v poli typ_org_obecny hodnotu 0 - takový záznam ale neexistuje
 - typ funkce obsahuje v poli typ_funkce_obecny hodnotu 0 - podle dokumentace je ale
   validní pouze 1 - předseda a 2 - místopředseda
 - typ funkce - záznam id 35 má hodnotu atributu typ_funkce_en = 'zapisovatel'
+- organy - pole nazev_organu_cz není typu int
+- organy - pole nazev_organu_en není typu int

@@ -6,6 +6,7 @@ Replace this with more appropriate tests for your application.
 """
 
 from django.test import TestCase
+import json
 
 class ApiTest(TestCase):
     fixtures = ['api_test_data.json']
@@ -17,6 +18,10 @@ class ApiTest(TestCase):
         response = self.client.get('/api/osoba/5990/',
                                    HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code, 200)
+        obj = json.loads(response.content)
+        for att in ['id', 'titul_pred', 'jmeno', 'prijmeni', 'titul_za', 'narozeni',
+                    'pohlavi', 'zmena', 'umrti', 'url']:
+            self.assertIn(att, obj)
 
     def test_typ_organu(self):
         response = self.client.get('/api/typ_organu/',
@@ -25,7 +30,11 @@ class ApiTest(TestCase):
         response = self.client.get('/api/typ_organu/12/',
                                    HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code, 200)
-        
+        obj = json.loads(response.content)
+        for att in ['id', 'nazev_typ_org_cz', 'nazev_typ_org_en', 'priorita', 'url',
+                    'nadrazeny_typ_url', 'obecny_typ_url']:
+            self.assertIn(att, obj)
+
     def test_typ_funkce(self):
         response = self.client.get('/api/typ_funkce/',
                                    HTTP_X_REQUESTED_WITH='XMLHttpRequest')
@@ -33,3 +42,33 @@ class ApiTest(TestCase):
         response = self.client.get('/api/typ_funkce/2/',
                                    HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code, 200)
+        obj = json.loads(response.content)
+        for att in ['id', 'typ_funkce_cz', 'typ_funkce_en', 'priorita',
+                    'obecny_typ', 'url', 'typ_organu_url']:
+            self.assertIn(att, obj)
+
+    def test_organ(self):
+        response = self.client.get('/api/organ/',
+                                   HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/api/organ/170/',
+                                   HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        obj = json.loads(response.content)
+        for att in ['id', 'organ_id', 'typ_organu_id', 'zkratka', 'nazev_organu_cz',
+                    'nazev_organu_en', 'od_organ', 'do_organ', 'priorita',
+                    'cl_organ_base', 'url', 'typ_organu_url', 'organ_url',
+                    'typ_organu_url']:
+            self.assertIn(att, obj)
+
+    def test_funkce(self):
+        response = self.client.get('/api/funkce/',
+                                   HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/api/funkce/1446/',
+                                   HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        obj = json.loads(response.content)
+        for att in ['id', 'organ_id', 'typ_funkce', 'nazev_funkce_cz',
+                    'priorita', 'organ', 'url', 'organ_url', 'typ_funkce_url']:
+            self.assertIn(att, obj)

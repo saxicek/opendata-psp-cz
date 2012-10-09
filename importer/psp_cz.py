@@ -2,9 +2,12 @@
 from api.models import Osoba
 from api.models import TypOrganu
 from api.models import TypFunkce
+from api.models import Organ
+from api.models import Funkce
 from django.db import models
-from heapq import heappush, heappop
+from django.db import transaction
 import datetime
+import time
 
 def _d(date_str):
     """Returns datetime.date from string YY-MM-DD"""
@@ -20,27 +23,61 @@ def _i(int_str):
         return None
     return int(int_str)
 
+class Timer:
+    def __enter__(self):
+        self.start = time.clock()
+        return self
+
+    def __exit__(self, *args):
+        self.end = time.clock()
+        self.interval = self.end - self.start
+
 class GenericReader(object):
     encoding = 'cp1250'
     filename = None
 
     def __init__(self, data_dir):
         self.data_dir = data_dir
+        self.record_count = 0
 
+        self.getter = {}
+        self.db_field = {}
+        for f in self.fields.keys():
+            model_field = self.model._meta.get_field(f)
+            self.db_field[f] = f
+            if isinstance(model_field, models.AutoField):
+                self.getter[f] = _i
+            if isinstance(model_field, models.IntegerField):
+                self.getter[f] = _i
+            elif isinstance(model_field, models.CharField):
+                self.getter[f] = lambda x: unicode(x.strip(), encoding=self.encoding)
+            elif isinstance(model_field, models.DateField):
+                self.getter[f] = _d
+            elif isinstance(model_field, models.ForeignKey):
+                self.getter[f] = lambda x: _i(x) if _i(x) <> 0 else None
+                self.db_field[f] = model_field.column
+            else:
+                self.getter[f] = lambda x: x
+
+    @transaction.commit_on_success
     def read(self):
         """Reads the file and submit its values to the database."""
-        if not self.filename:
-            print 'No filename specified for ' + self.__name__ + '! Skipping.'
-            return
-        models = []
-        with open(self.data_dir + self.filename) as f:
-            for line in f.xreadlines():
-                model = self.getModel(line.split('|'))
-                heappush(models, model)
-        #self.model.objects.bulk_create(models)
-        while models:
-            heappop(models).save()
-        print 'File ' + self.filename + ' successfully loaded.'
+        with Timer() as t:
+            with open(self.data_dir + self.filename) as f:
+                previous_line = ''
+                for line in f:
+                    # FORMAT FIX: some rows are split with \r\\\n - join them with next line
+                    line = previous_line + line
+                    if line[-3:] == "\r\\\n":
+                        previous_line = line[:-3] + ' '
+                    else:
+                        previous_line = ''
+                        # map the line to model
+                        model = self.getModel(line.split('|'))
+                        model.save()
+                        self.record_count += 1
+
+        print 'File ' + self.filename + ' successfully loaded (%d records in %.03f sec).' % (self.record_count, t.interval)
 
     def getModel(self, values):
         """Creates instance of self.model and sets its attributes
@@ -49,24 +86,8 @@ class GenericReader(object):
         m = self.model()
 
         for f in self.fields.keys():
-            model_field = m._meta.get_field(f)
-            if isinstance(model_field, models.AutoField):
-                value = _i(values[self.fields[f]])
-            if isinstance(model_field, models.IntegerField):
-                value = _i(values[self.fields[f]])
-            elif isinstance(model_field, models.CharField):
-                value = unicode(values[self.fields[f]].strip(), encoding=self.encoding)
-            elif isinstance(model_field, models.DateField):
-                value = _d(values[self.fields[f]])
-            elif isinstance(model_field, models.ForeignKey):
-                value = _i(values[self.fields[f]])
-                # Some source data contain value 0 which is obviously invalid
-                value = value if value <> 0 else None
-                f = model_field.column
-            else:
-                value = values[self.fields[f]]
-
-            setattr(m, f, value)
+            value = self.getter[f](values[self.fields[f]])
+            setattr(m, self.db_field[f], value)
 
         return m
 
@@ -123,11 +144,47 @@ class TypFunkceReader(GenericReader):
         'obecny_typ': 5,
     }
 
+class OrganReader(GenericReader):
+
+    filename = 'organy.unl'
+    model = Organ
+
+    # 165|0|11|PSP1|Poslanecká sněmovna|Chamber of Deputies|92-06-06|96-06-06|1000|0|
+    fields = {
+        'id': 0,
+        'organ': 1,
+        'typ_organu': 2,
+        'zkratka': 3,
+        'nazev_organu_cz': 4,
+        'nazev_organu_en': 5,
+        'od_organ': 6,
+        'do_organ': 7,
+        'priorita': 8,
+        'cl_organ_base': 9,
+    }
+
+class FunkceReader(GenericReader):
+
+    filename = 'funkce.unl'
+    model = Funkce
+
+    # 755|168|18|Předseda|1|
+    fields = {
+        'id': 0,
+        'organ': 1,
+        'typ_funkce': 2,
+        'nazev_funkce_cz': 3,
+        'priorita': 4,
+    }
+
 def import_all(data_dir):
+    data_dir = data_dir if data_dir[-1:] == '/' else data_dir + '/'
     load_entities = [
                      OsobaReader,
                      TypOrganuReader,
                      TypFunkceReader,
+                     OrganReader,
+                     FunkceReader
                     ]
     # perform reader validation
     for entity in load_entities:

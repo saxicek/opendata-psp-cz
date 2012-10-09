@@ -3,6 +3,8 @@ from djangorestframework.views import ListOrCreateModelView, InstanceModelView
 from api.resources import OsobaResource
 from api.resources import TypOrganuResource
 from api.resources import TypFunkceResource
+from api.resources import OrganResource
+from api.resources import FunkceResource
 
 urlpatterns = patterns('',
     url(r'^$', ListOrCreateModelView.as_view(resource=OsobaResource), name='osoby-root'),
@@ -12,4 +14,8 @@ urlpatterns = patterns('',
     url(r'^typ_organu/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=TypOrganuResource), name='typ_organu'),
     url(r'^typ_funkce/$', ListOrCreateModelView.as_view(resource=TypFunkceResource), name='typy_funkci'),
     url(r'^typ_funkce/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=TypFunkceResource), name='typ_funkce'),
+    url(r'^organ/$', ListOrCreateModelView.as_view(resource=OrganResource), name='organy'),
+    url(r'^organ/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=OrganResource), name='organ'),
+    url(r'^funkce/$', ListOrCreateModelView.as_view(resource=FunkceResource), name='funkce-list'),
+    url(r'^funkce/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=FunkceResource), name='funkce'),
 )
