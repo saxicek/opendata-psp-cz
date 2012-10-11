@@ -153,3 +153,91 @@ class Funkce(models.Model):
 
     organ = models.ForeignKey(Organ)
     typ_funkce = models.ForeignKey(TypFunkce)
+
+class ZarazeniOrgan(models.Model):
+    """
+    Tabulka zarazeni
+    =========  ======================  ====================================
+    Sloupec    Typ                     Použití a vazby
+    =========  ======================  ====================================
+    id_osoba   int                     Identifikátor osoby, viz
+                                       osoba:id_osoba
+    id_of      int                     Identifikátor orgánu či funkce:
+                                       pokud je zároveň nastaveno
+                                       zarazeni:cl_funkce == 0, pak id_o
+                                       odpovídá organy:id_organ, pokud
+                                       cl_funkce == 1, pak odpovídá
+                                       funkce:id_funkce.
+    cl_funkce  int                     Status členství nebo funce: pokud je
+                                       rovno 0, pak jde o členství,
+                                       pokud 1, pak jde o funkci.
+    od_o       datetime(year to hour)  Zařazení od
+    do_o       datetime(year to hour)  Zařazení do
+    od_f       date                    Mandát od. Nemusí být vyplněno a
+                                       pokud je vyplněno, pak určuje datum
+                                       vzniku mandátu a zarazeni:od_o
+                                       obsahuje datum volby.
+    do_f       date                    Mandát do. Nemusí být vyplněno a
+                                       pokud je vyplněno, určuje datum
+                                       konce mandátu a zarazeni:do_o
+                                       obsahuje datum ukončení zařazení.
+    =========  ======================  ====================================
+
+    Zdrojová tabulka není v 3NF a proto jsem ji rozdělil na 2:
+    - ZarazeniOrgan
+    - ZarazeniFunkce
+
+    Model ZarazeniOrgan reprezentuje záznamy, které mají cl_funkce == 0.
+
+    """
+    zarazeni_od = models.DateTimeField()
+    zarazeni_do = models.DateTimeField(null=True)
+    mandat_od = models.DateField(null=True)
+    mandat_do = models.DateField(null=True)
+
+    osoba = models.ForeignKey(Osoba)
+    organ = models.ForeignKey(Organ)
+
+class ZarazeniFunkce(models.Model):
+    """
+    Tabulka zarazeni
+    =========  ======================  ====================================
+    Sloupec    Typ                     Použití a vazby
+    =========  ======================  ====================================
+    id_osoba   int                     Identifikátor osoby, viz
+                                       osoba:id_osoba
+    id_of      int                     Identifikátor orgánu či funkce:
+                                       pokud je zároveň nastaveno
+                                       zarazeni:cl_funkce == 0, pak id_o
+                                       odpovídá organy:id_organ, pokud
+                                       cl_funkce == 1, pak odpovídá
+                                       funkce:id_funkce.
+    cl_funkce  int                     Status členství nebo funce: pokud je
+                                       rovno 0, pak jde o členství,
+                                       pokud 1, pak jde o funkci.
+    od_o       datetime(year to hour)  Zařazení od
+    do_o       datetime(year to hour)  Zařazení do
+    od_f       date                    Mandát od. Nemusí být vyplněno a
+                                       pokud je vyplněno, pak určuje datum
+                                       vzniku mandátu a zarazeni:od_o
+                                       obsahuje datum volby.
+    do_f       date                    Mandát do. Nemusí být vyplněno a
+                                       pokud je vyplněno, určuje datum
+                                       konce mandátu a zarazeni:do_o
+                                       obsahuje datum ukončení zařazení.
+    =========  ======================  ====================================
+
+    Zdrojová tabulka není v 3NF a proto jsem ji rozdělil na 2:
+    - ZarazeniOrgan
+    - ZarazeniFunkce
+
+    Model ZarazeniFunkce reprezentuje záznamy, které mají cl_funkce == 1.
+
+    """
+    zarazeni_od = models.DateTimeField()
+    zarazeni_do = models.DateTimeField(null=True)
+    mandat_od = models.DateField(null=True)
+    mandat_do = models.DateField(null=True)
+
+    osoba = models.ForeignKey(Osoba)
+    funkce = models.ForeignKey(Funkce)

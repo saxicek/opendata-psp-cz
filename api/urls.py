@@ -5,6 +5,8 @@ from api.resources import TypOrganuResource
 from api.resources import TypFunkceResource
 from api.resources import OrganResource
 from api.resources import FunkceResource
+from api.resources import ZarazeniOrganResource
+from api.resources import ZarazeniFunkceResource
 
 urlpatterns = patterns('',
     url(r'^$', ListOrCreateModelView.as_view(resource=OsobaResource), name='osoby-root'),
@@ -18,4 +20,8 @@ urlpatterns = patterns('',
     url(r'^organ/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=OrganResource), name='organ'),
     url(r'^funkce/$', ListOrCreateModelView.as_view(resource=FunkceResource), name='funkce-list'),
     url(r'^funkce/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=FunkceResource), name='funkce'),
+    url(r'^zarazeni_organ/$', ListOrCreateModelView.as_view(resource=ZarazeniOrganResource), name='zarazeni_organu'),
+    url(r'^zarazeni_organ/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=ZarazeniOrganResource), name='zarazeni_organ'),
+    url(r'^zarazeni_funkce/$', ListOrCreateModelView.as_view(resource=ZarazeniFunkceResource), name='zarazeni_funkci'),
+    url(r'^zarazeni_funkce/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=ZarazeniFunkceResource), name='zarazeni_funkce'),
 )

@@ -5,6 +5,8 @@ from api.models import TypOrganu
 from api.models import TypFunkce
 from api.models import Organ
 from api.models import Funkce
+from api.models import ZarazeniOrgan
+from api.models import ZarazeniFunkce
 
 class OsobaResource(ModelResource):
     model = Osoba
@@ -99,3 +101,45 @@ class FunkceResource(ModelResource):
         return reverse('typ_funkce',
                         kwargs={'id': instance.typ_funkce_id},
                         request=self.request)
+
+class ZarazeniOrganResource(ModelResource):
+    model = ZarazeniOrgan
+    fields = ('id', 'zarazeni_od', 'zarazeni_do', 'mandat_od', 'mandat_do',
+              'osoba_id', 'osoba_url', 'organ_id', 'organ_url', 'url')
+    ordering = ('id', )
+
+    def url(self, instance):
+        return reverse('zarazeni_organ',
+            kwargs={'id': instance.id},
+            request=self.request)
+
+    def organ_url(self, instance):
+        return reverse('organ',
+            kwargs={'id': instance.organ_id},
+            request=self.request)
+
+    def osoba_url(self, instance):
+        return reverse('osoba',
+            kwargs={'id': instance.osoba_id},
+            request=self.request)
+
+class ZarazeniFunkceResource(ModelResource):
+    model = ZarazeniFunkce
+    fields = ('id', 'zarazeni_od', 'zarazeni_do', 'mandat_od', 'mandat_do',
+              'osoba_id', 'osoba_url', 'funkce_id', 'funkce_url', 'url')
+    ordering = ('id', )
+
+    def url(self, instance):
+        return reverse('zarazeni_funkce',
+            kwargs={'id': instance.id},
+            request=self.request)
+
+    def funkce_url(self, instance):
+        return reverse('funkce',
+            kwargs={'id': instance.funkce_id},
+            request=self.request)
+
+    def osoba_url(self, instance):
+        return reverse('osoba',
+            kwargs={'id': instance.osoba_id},
+            request=self.request)
