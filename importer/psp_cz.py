@@ -1,28 +1,43 @@
 # coding=utf-8
+from django.db import models
+from django.db import transaction
+from pytz import timezone
+from decimal import Decimal
+import datetime
+import time
+import re
+
 from api.models import Osoba
+from api.models import Poslanec
 from api.models import TypOrganu
 from api.models import TypFunkce
 from api.models import Organ
 from api.models import Funkce
 from api.models import ZarazeniOrgan
 from api.models import ZarazeniFunkce
-from django.db import models
-from django.db import transaction
-from pytz import timezone
-import datetime
-import time
-import re
+from api.models import Pkgps
+from api.models import Hlasovani
 
 DATETIME_RE = re.compile(r'(\d{4})-(\d{2})-(\d{2}) (\d{2})')
+DATE_RE = re.compile(r'(\d{2})\.(\d{2})\.(\d{4})')
+SHORT_DATE_RE = re.compile(r'(\d{2})-(\d{2})-(\d{2})')
 
 def _d(date_str):
-    """Returns datetime.date from string YY-MM-DD"""
+    """Returns datetime.date from string YY-MM-DD or DD.MM.YYYY"""
     if not date_str:
         return None
-    values = date_str.split('-')
-    year = 1900 + int(values[0]) if int(values[0]) > 12 else 2000 + int(values[0])
+    # FORMAT FIX: dates are sometimes in format DD.MM.YYYY ...
+    m = DATE_RE.match(date_str)
+    if m:
+        return datetime.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+    # FORMAT FIX: ... and sometimes in format YY-MM-DD
+    m = SHORT_DATE_RE.match(date_str)
+    if m:
+        year = int(m.group(1)) + 1900 if int(m.group(1)) > 12 else int(m.group(1)) + 2000
+        return datetime.date(year, int(m.group(2)), int(m.group(3)))
 
-    return datetime.date(year, int(values[1]), int(values[2]))
+    print 'String |' + date_str + '| does not match any supported date format!'
+    return None
 
 def _dt(datetime_str):
     """Returns datetime.datetime from string YY-MM-DD HH"""
@@ -40,6 +55,13 @@ def _i(int_str):
 
     return int(int_str)
 
+def _dec(decimal_str):
+    """Returns Decimal from string"""
+    if not decimal_str:
+        return None
+
+    return Decimal(decimal_str)
+
 class Timer:
     def __enter__(self):
         self.start = time.clock()
@@ -53,6 +75,7 @@ class GenericReader(object):
     encoding = 'cp1250'
     filename = None
     model = None
+    fields = {}
 
     def __init__(self, data_dir):
         self.data_dir = data_dir
@@ -71,6 +94,8 @@ class GenericReader(object):
                 self.getter[f] = _i
             elif isinstance(model_field, models.IntegerField):
                 self.getter[f] = _i
+            elif isinstance(model_field, models.DecimalField):
+                self.getter[f] = _dec
             elif isinstance(model_field, models.CharField):
                 self.getter[f] = lambda x: unicode(x.strip(), encoding=self.encoding)
             elif type(model_field) == models.DateTimeField:
@@ -97,13 +122,20 @@ class GenericReader(object):
                     else:
                         previous_line = ''
                         # map the line to model
-                        model = self.fillModel(line.split('|'))
+                        model = self.fill_model(line.split('|'))
                         model.save()
                         self.record_count += 1
 
-        print 'File ' + self.filename + ' successfully loaded (%d records in %.03f sec).' % (self.record_count, t.interval)
+        if self.model:
+            print 'File ' + self.filename +\
+                  ' successfully loaded (%d records in %.03f sec; %d records in DB).'\
+                  % (self.record_count, t.interval, self.model.objects.count())
+        else:
+            print 'File ' + self.filename +\
+                  ' successfully loaded (%d records in %.03f sec).'\
+                  % (self.record_count, t.interval)
 
-    def fillModel(self, values):
+    def fill_model(self, values):
         """Creates instance of self.model and sets its attributes
         per self.fields definition.
         """
@@ -118,6 +150,29 @@ class GenericReader(object):
     def save_fields(self):
         """Gets list of fields that should be saved."""
         return [field_name for field_name in self.fields.keys() if field_name <> 'id']
+
+    def _no_id_get_model(self, model, values):
+        """This function should be used for files with no ID for records. It is queried
+        using all attributes, if no matching record is found, new instance is created."""
+        values_dict = {}
+
+        for f in self.fields.keys():
+            value = self.getter[f](values[self.fields[f]])
+            values_dict[self.db_field[f]] = value
+
+        # check whether the model instance exists in the DB
+        instances = model.objects.filter(**values_dict)
+        if instances:
+            if len(instances) == 1:
+                m = instances[0]
+            else:
+                raise Exception('Query for ' + model.__class__.__name__ +
+                                ' with criteria ' + str(values_dict) +
+                                ' returned more than 1 row!')
+        else:
+            m = model(**values_dict)
+
+        return m
 
 class OsobaReader(GenericReader):
 
@@ -214,13 +269,12 @@ class ZarazeniReader(GenericReader):
         'mandat_do': 6,
     }
 
-    def fillModel(self, values):
+    def fill_model(self, values):
         """Creates instance of self.model and sets its attributes
         per self.fields definition.
         This is overloaded implementation of generic function
         because we are loading data into 2 tables.
         """
-        model = None
         if values[2] == '0':
             model = ZarazeniOrgan
             self.fields['organ'] = 1
@@ -233,24 +287,88 @@ class ZarazeniReader(GenericReader):
                 del self.fields['organ']
 
         self._init_getters(model)
-        values_dict = {}
 
-        for f in self.fields.keys():
-            value = self.getter[f](values[self.fields[f]])
-            values_dict[self.db_field[f]] = value
+        return self._no_id_get_model(model, values)
 
-        # check whether the model instance exists in the DB
-        instances = model.objects.filter(**values_dict)
-        if instances:
-            if len(instances) == 1:
-                m = instances[0]
-            else:
-                raise Exception('Query for ' + model.__class__.__name__ + ' with criteria ' + values_dict +
-                                ' returned more than 1 row!')
-        else:
-            m = model(**values_dict)
+class PoslanecReader(GenericReader):
 
-        return m
+    filename = 'poslanec.unl'
+    model = Poslanec
+
+    # 1262|5859|586|155|170|http://www.jirisulc.cz/|Klíšská 2058/33|Ústí nad Labem|40001|sulcj@psp.cz|||2057|http://www.facebook.com/profile.php?id=100000017868039&ref=ts|1|
+    fields = {
+        'id': 0,
+        'osoba': 1,
+        'kraj': 2,
+        'kandidatka': 3,
+        'obdobi': 4,
+        'web': 5,
+        'ulice': 6,
+        'obec': 7,
+        'psc': 8,
+        'email': 9,
+        'telefon': 10,
+        'fax': 11,
+        'psp_telefon': 12,
+        'facebook': 13,
+        'foto': 14,
+    }
+
+class PkgpsReader(GenericReader):
+
+    filename = 'pkgps.unl'
+    model = Pkgps
+
+    # 1091|Masarykova 12/1355; Blansko; 67801|49.2121903|16.3856678|
+    fields = {
+        'poslanec': 0,
+        'adresa': 1,
+        'delka': 2,
+        'sirka': 3,
+    }
+
+    def fill_model(self, values):
+        """Creates instance of self.model and sets its attributes
+        per self.fields definition.
+        """
+
+        return self._no_id_get_model(self.model, values)
+
+class HlasovaniReader(GenericReader):
+
+    filename = 'hl2010s.unl'
+    model = Hlasovani
+    DATUM_RE = re.compile(r'(\d{2})-(\d{2})-(\d{2})(\d{2}):(\d{2})')
+
+    # 52621|170|7|10|0|10-10-29|09:08|149|0|7|1|157|79|N|A|Pořad schůze||
+    fields = {
+        'id': 0,
+        'organ': 1,
+        'schuze': 2,
+        'cislo': 3,
+        'bod': 4,
+        'pro': 7,
+        'proti': 8,
+        'zdrzel': 9,
+        'nehlasoval': 10,
+        'prihlaseno': 11,
+        'kvorum': 12,
+        'druh_hlasovani': 13,
+        'vysledek': 14,
+        'nazev_dlouhy': 15,
+        'nazev_kratky': 16,
+    }
+
+    def fill_model(self, values):
+        """Overloads method from GenericReader.fill_model to fill
+        field `datum` which is split into 2 fields.
+        """
+        model = super(HlasovaniReader, self).fill_model(values)
+        m = self.DATUM_RE.match(values[5] + values[6])
+        model.datum = datetime.datetime(int(m.group(1)) + 2000, int(m.group(2)), int(m.group(3)),
+            int(m.group(4)), int(m.group(5)), tzinfo=timezone('Europe/Prague'))
+
+        return model
 
 def import_all(data_dir):
     data_dir = data_dir if data_dir[-1:] == '/' else data_dir + '/'
@@ -261,6 +379,9 @@ def import_all(data_dir):
                      OrganReader,
                      FunkceReader,
                      ZarazeniReader,
+                     PoslanecReader,
+                     PkgpsReader,
+                     HlasovaniReader,
                     ]
     # perform reader validation
     for entity in load_entities:

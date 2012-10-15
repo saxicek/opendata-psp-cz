@@ -7,6 +7,9 @@ from api.models import Organ
 from api.models import Funkce
 from api.models import ZarazeniOrgan
 from api.models import ZarazeniFunkce
+from api.models import Poslanec
+from api.models import Pkgps
+from api.models import Hlasovani
 
 class OsobaResource(ModelResource):
     model = Osoba
@@ -142,4 +145,69 @@ class ZarazeniFunkceResource(ModelResource):
     def osoba_url(self, instance):
         return reverse('osoba',
             kwargs={'id': instance.osoba_id},
+            request=self.request)
+
+class PoslanecResource(ModelResource):
+    model = Poslanec
+    fields = ('id', 'web', 'ulice', 'obec', 'psc',
+              'email', 'telefon', 'fax', 'psp_telefon',
+              'facebook', 'foto', 'url', 'osoba_url',
+              'kraj_url', 'kandidatka_url', 'obdobi_url')
+    ordering = ('id', )
+
+    def url(self, instance):
+        return reverse('poslanec',
+            kwargs={'id': instance.id},
+            request=self.request)
+
+    def osoba_url(self, instance):
+        return reverse('osoba',
+            kwargs={'id': instance.osoba_id},
+            request=self.request)
+
+    def kraj_url(self, instance):
+        return reverse('organ',
+            kwargs={'id': instance.kraj_id},
+            request=self.request)
+
+    def kandidatka_url(self, instance):
+        return reverse('organ',
+            kwargs={'id': instance.kandidatka_id},
+            request=self.request)
+
+    def obdobi_url(self, instance):
+        return reverse('organ',
+            kwargs={'id': instance.obdobi_id},
+            request=self.request)
+
+class PkgpsResource(ModelResource):
+    model = Pkgps
+    fields = ('id', 'adresa', 'sirka', 'delka', 'url', 'poslanec_url')
+    ordering = ('id', )
+
+    def url(self, instance):
+        return reverse('pkgps',
+            kwargs={'id': instance.id},
+            request=self.request)
+
+    def poslanec_url(self, instance):
+        return reverse('poslanec',
+            kwargs={'id': instance.poslanec_id},
+            request=self.request)
+
+class HlasovaniResource(ModelResource):
+    model = Hlasovani
+    fields = ('id', 'schuze', 'cislo', 'bod', 'datum', 'pro', 'proti', 'zdrzel',
+              'nehlasoval', 'prihlaseno', 'kvorum', 'druh_hlasovani',
+              'vysledek', 'nazev_dlouhy', 'nazev_kratky', 'url', 'organ_url')
+    ordering = ('schuze', 'cislo')
+
+    def url(self, instance):
+        return reverse('hlasovani',
+            kwargs={'id': instance.id},
+            request=self.request)
+
+    def organ_url(self, instance):
+        return reverse('organ',
+            kwargs={'id': instance.organ_id},
             request=self.request)

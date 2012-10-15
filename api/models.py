@@ -241,3 +241,137 @@ class ZarazeniFunkce(models.Model):
 
     osoba = models.ForeignKey(Osoba)
     funkce = models.ForeignKey(Funkce)
+
+class Poslanec(models.Model):
+    """
+    Tabulka poslanec
+    =============  =======  ===============================================
+    Sloupec        Typ      Použití a vazby
+    =============  =======  ===============================================
+    id_poslanec    int      Identifikátor poslance
+    id_osoba       int      Identifikátor osoby, viz osoba:id_osoba
+    id_kraj        int      Volební kraj, viz organy:id_organu
+    id_kandidatka  int      Volební strana/hnutí, viz org:id_organu, pouze
+                            odkazuje na stranu/hnutí, za kterou byl zvolen
+                            a nemusí mít souvislost s členstvím
+                            v poslaneckém klubu.
+    id_obdobi      int      Volební období, viz organy:id_organu
+    web            char(X)  URL vlastních stránek poslance
+    ulice          char(X)  Adresa regionální kanceláře, ulice.
+    obec           char(X)  Adresa regionální kanceláře, obec.
+    psc            char(X)  Adresa regionální kanceláře, PSČ.
+    email          char(X)  E-mailová adresa poslance, případně obecná
+                            posta@psp.cz.
+    telefon        char(X)  Adresa regionální kanceláře, telefon.
+    fax            char(X)  Adresa regionální kanceláře, fax.
+    psp_telefon    char(X)  Telefonní číslo do kanceláře v budovách PS.
+    facebook       char(X)  URL stránky služby Facebook.
+    foto           int      Pokud je rovno 1, pak existuje fotografie
+                            poslance.
+    =============  =======  ===============================================
+
+    """
+    web = models.CharField(max_length=1000, blank=True)
+    ulice = models.CharField(max_length=100, blank=True)
+    obec = models.CharField(max_length=100, blank=True)
+    psc = models.CharField(max_length=10, blank=True)
+    email = models.CharField(max_length=100, blank=True)
+    telefon = models.CharField(max_length=100, blank=True)
+    fax = models.CharField(max_length=100, blank=True)
+    psp_telefon = models.CharField(max_length=100, blank=True)
+    facebook = models.CharField(max_length=1000, blank=True)
+    foto = models.IntegerField()
+
+    osoba = models.ForeignKey(Osoba)
+    kraj = models.ForeignKey(Organ,
+                             related_name='poslanci_kraje')
+    kandidatka = models.ForeignKey(Organ, null=True,
+                                   related_name='poslanci_strany')
+    obdobi = models.ForeignKey(Organ,
+                               related_name='poslanci_obdobi')
+
+class Pkgps(models.Model):
+    """
+    ===========  =======  =================================================
+    Sloupec      Typ      Použití a vazby
+    ===========  =======  =================================================
+    id_poslanec  int      Identifikátor poslance, viz poslanec:id_poslanec
+    adresa       char(X)  Adresa kanceláře, jednotlivé položky jsou
+                          odděleny středníkem
+    sirka        char(X)  Severní šířka, WGS 84, formát GG.AABBCCC,
+                          GG = stupně, AA - minuty, BB - vteřiny,
+                          CCC - tisíciny vteřin
+    delka        char(X)  Východní délka, WGS 84, formát GG.AABBCCC,
+                          GG = stupně, AA - minuty, BB - vteřiny,
+                          CCC - tisíciny vteřin
+    ===========  =======  =================================================
+
+    """
+    adresa = models.CharField(max_length=1000)
+    sirka = models.DecimalField(max_digits=20, decimal_places=17)
+    delka = models.DecimalField(max_digits=20, decimal_places=17)
+
+    poslanec = models.ForeignKey(Poslanec)
+
+class Hlasovani(models.Model):
+    """
+    ==============  ================  =====================================
+    Sloupec         Typ               Použití a vazby
+    ==============  ================  =====================================
+    id_hlasovani    int               Identifikátor hlasování
+    id_organ        int               Identifikátor orgánu, viz
+                                      organy:id_organ
+    schuze          int               Číslo schůze
+    cislo           int               Číslo hlasování
+    bod             int               Bod pořadu schůze; je-li menší než 1,
+                                      pak jde o procedurální hlasování nebo
+                                      o hlasování k bodům, které v době
+                                      hlasování neměly přiděleno číslo.
+    datum           date              Datum hlasování
+    čas             datetime          Čas hlasování
+                    (hour to minute)
+    pro             int               Počet hlasujících pro
+    proti           int               Počet hlasujících proti
+    zdrzel          int               Počet hlasujících zdržel se, tj.
+                                      stiskl tlačítko X
+    nehlasoval      int               Počet přihlášených, kteří nestiskli
+                                      žádné tlačítko
+    prihlaseno      int               Počet přihlášených poslanců
+    kvorum          int               Kvórum, nejmenší počet hlasů k
+                                      přijetí návrhu
+    druh_hlasovani  char(X)           Druh hlasování: N - normální,
+                                      R - ruční (nejsou známy hlasování
+                                      jednotlivých poslanců)
+    vysledek        char(X)           Výsledek: A - přijato, R - zamítnuto,
+                                      jinak zmatečné hlasování
+    nazev_dlouhy    char(X)           Dlouhý název bodu hlasování
+    nazev_kratky    char(X)           Krátký název bodu hlasování
+    ==============  ================  =====================================
+
+    """
+    HLASOVANI_CHOICES = (
+        ('N', 'normální'),
+        ('R', 'ruční'),
+        )
+
+    VYSLEDEK_CHOICES = (
+        ('A', 'přijato'),
+        ('R', 'zamítnuto'),
+        )
+
+    schuze = models.IntegerField()
+    cislo = models.IntegerField()
+    bod = models.IntegerField()
+    datum = models.DateTimeField()
+    pro = models.IntegerField()
+    proti = models.IntegerField()
+    zdrzel = models.IntegerField()
+    nehlasoval = models.IntegerField()
+    prihlaseno = models.IntegerField()
+    kvorum = models.IntegerField()
+    druh_hlasovani = models.CharField(max_length=1, choices=HLASOVANI_CHOICES)
+    vysledek = models.CharField(max_length=1, choices=VYSLEDEK_CHOICES)
+    nazev_dlouhy = models.CharField(max_length=100, blank=True)
+    nazev_kratky = models.CharField(max_length=100, blank=True)
+
+    organ = models.ForeignKey(Organ)
