@@ -10,6 +10,7 @@ from api.models import ZarazeniFunkce
 from api.models import Poslanec
 from api.models import Pkgps
 from api.models import Hlasovani
+from api.models import HlasovaniPoslanec
 
 class OsobaResource(ModelResource):
     model = Osoba
@@ -199,7 +200,8 @@ class HlasovaniResource(ModelResource):
     model = Hlasovani
     fields = ('id', 'schuze', 'cislo', 'bod', 'datum', 'pro', 'proti', 'zdrzel',
               'nehlasoval', 'prihlaseno', 'kvorum', 'druh_hlasovani',
-              'vysledek', 'nazev_dlouhy', 'nazev_kratky', 'url', 'organ_url')
+              'vysledek', 'nazev_dlouhy', 'nazev_kratky', 'organ_id', 'url',
+              'organ_url')
     ordering = ('schuze', 'cislo')
 
     def url(self, instance):
@@ -210,4 +212,25 @@ class HlasovaniResource(ModelResource):
     def organ_url(self, instance):
         return reverse('organ',
             kwargs={'id': instance.organ_id},
+            request=self.request)
+
+class HlasovaniPoslanecResource(ModelResource):
+    model = HlasovaniPoslanec
+    fields = ('id', 'vysledek', 'poslanec_id', 'hlasovani_id', 'url',
+              'poslanec_url', 'hlasovani_url')
+    ordering = ('hlasovani', 'poslanec')
+
+    def url(self, instance):
+        return reverse('hlasovani_poslanec',
+            kwargs={'id': instance.id},
+            request=self.request)
+
+    def poslanec_url(self, instance):
+        return reverse('poslanec',
+            kwargs={'id': instance.poslanec_id},
+            request=self.request)
+
+    def hlasovani_url(self, instance):
+        return reverse('hlasovani',
+            kwargs={'id': instance.hlasovani_id},
             request=self.request)

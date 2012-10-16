@@ -77,5 +77,13 @@
 
     {"pk": 52361, "model": "api.hlasovani", "fields": {"proti": 0, "druh_hlasovani": "N", "prihlaseno": 195, "nazev_kratky": "", "organ": 170, "nazev_dlouhy": "Inf. o ustaven\u00ed volebn\u00ed komise PS a volb\u011b \u010dlen\u016f", "pro": 192, "datum": "2010-06-22T13:54:00Z", "vysledek": "A", "schuze": 1, "cislo": 1, "zdrzel": 3, "kvorum": 98, "nehlasoval": 0, "bod": 3}},
     {"pk": 52362, "model": "api.hlasovani", "fields": {"proti": 0, "druh_hlasovani": "N", "prihlaseno": 196, "nazev_kratky": "", "organ": 170, "nazev_dlouhy": "N\u00e1v.na stanoven\u00ed po\u010dtu \u010dl. MIV", "pro": 191, "datum": "2010-06-22T13:57:00Z", "vysledek": "A", "schuze": 1, "cislo": 2, "zdrzel": 4, "kvorum": 99, "nehlasoval": 1, "bod": 4}},
-    {"pk": 52363, "model": "api.hlasovani", "fields": {"proti": 0, "druh_hlasovani": "N", "prihlaseno": 197, "nazev_kratky": "", "organ": 170, "nazev_dlouhy": "N\u00e1vrh na ustaven\u00ed MIV", "pro": 192, "datum": "2010-06-24T09:06:00Z", "vysledek": "A", "schuze": 1, "cislo": 3, "zdrzel": 5, "kvorum": 99, "nehlasoval": 0, "bod": 6}}
+    {"pk": 52363, "model": "api.hlasovani", "fields": {"proti": 0, "druh_hlasovani": "N", "prihlaseno": 197, "nazev_kratky": "", "organ": 170, "nazev_dlouhy": "N\u00e1vrh na ustaven\u00ed MIV", "pro": 192, "datum": "2010-06-24T09:06:00Z", "vysledek": "A", "schuze": 1, "cislo": 3, "zdrzel": 5, "kvorum": 99, "nehlasoval": 0, "bod": 6}},
+
+    {"pk": 44, "model": "api.hlasovaniposlanec", "fields": {"vysledek": "A", "poslanec": 1130, "hlasovani": 52361}},
+    {"pk": 84, "model": "api.hlasovaniposlanec", "fields": {"vysledek": "A", "poslanec": 1177, "hlasovani": 52361}},
+    {"pk": 244, "model": "api.hlasovaniposlanec", "fields": {"vysledek": "A", "poslanec": 1130, "hlasovani": 52362}},
+    {"pk": 284, "model": "api.hlasovaniposlanec", "fields": {"vysledek": "A", "poslanec": 1177, "hlasovani": 52362}},
+    {"pk": 444, "model": "api.hlasovaniposlanec", "fields": {"vysledek": "A", "poslanec": 1130, "hlasovani": 52363}},
+    {"pk": 484, "model": "api.hlasovaniposlanec", "fields": {"vysledek": "A", "poslanec": 1177, "hlasovani": 52363}}
+
 ]

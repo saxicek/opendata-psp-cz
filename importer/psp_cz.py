@@ -17,6 +17,7 @@ from api.models import ZarazeniOrgan
 from api.models import ZarazeniFunkce
 from api.models import Pkgps
 from api.models import Hlasovani
+from api.models import HlasovaniPoslanec
 
 DATETIME_RE = re.compile(r'(\d{4})-(\d{2})-(\d{2}) (\d{2})')
 DATE_RE = re.compile(r'(\d{2})\.(\d{2})\.(\d{4})')
@@ -72,23 +73,54 @@ class Timer:
         self.interval = self.end - self.start
 
 class GenericReader(object):
+    """
+    'Abstract' class which implements import logic. Every subclass must set
+    following class attributes:
+
+    `filename` name of the file we are exporting from
+
+    `model` is Django model class we will use for ORM mapping. If model is
+            determined dynamically from data row, function `dynamic_model` must
+            be overloaded.
+
+    `fields` is dictionary of model fields and their position in the file. This
+            represents actual mapping. Dictionary keys are model attribute
+            names, values are position in the file row (where '|' character is
+            the separator).
+
+    `has_id` is switch for tables which to not have single primary key (ID).
+            If set to False, query against database is run to check if
+            the record with same values already exists in the database.
+            If found, no insert/update operation is performed. If not found,
+            new record is created. If set to True (default), database model has
+            single primary key and insert/update operation is handled
+            automatically by Django.
+    """
     encoding = 'cp1250'
     filename = None
     model = None
     fields = {}
+    has_id = True
 
     def __init__(self, data_dir):
         self.data_dir = data_dir
         self.record_count = 0
 
-        if self.model:
+        if not self.has_dynamic_model():
             self._init_getters(self.model)
 
-    def _init_getters(self, model):
+    def dynamic_model(self, values):
+        """
+        Returns Django model class based on input values. Used in cases when
+        input file is loaded into multiple database tables.
+        """
+        return None
+
+    def _init_getters(self, model_class):
         self.getter = {}
         self.db_field = {}
         for f in self.fields.keys():
-            model_field = model._meta.get_field(f)
+            model_field = model_class._meta.get_field(f)
             self.db_field[f] = f
             if isinstance(model_field, models.AutoField):
                 self.getter[f] = _i
@@ -123,10 +155,13 @@ class GenericReader(object):
                         previous_line = ''
                         # map the line to model
                         model = self.fill_model(line.split('|'))
-                        model.save()
+                        if model:
+                            model.save()
+                        # count record even if it has not been saved - it is in
+                        # the database already
                         self.record_count += 1
 
-        if self.model:
+        if not self.has_dynamic_model():
             print 'File ' + self.filename +\
                   ' successfully loaded (%d records in %.03f sec; %d records in DB).'\
                   % (self.record_count, t.interval, self.model.objects.count())
@@ -139,21 +174,38 @@ class GenericReader(object):
         """Creates instance of self.model and sets its attributes
         per self.fields definition.
         """
-        m = self.model()
+        if self.has_dynamic_model():
+            model_cls = self._get_dynamic_model(values)
+        else:
+            model_cls = self.model
 
-        for f in self.fields.keys():
-            value = self.getter[f](values[self.fields[f]])
-            setattr(m, self.db_field[f], value)
-
+        if self.has_id:
+            m = model_cls()
+            for f in self.fields.keys():
+                value = self.getter[f](values[self.fields[f]])
+                setattr(m, self.db_field[f], value)
+        else:
+            m = self._no_id_get_model(values, model_cls)
         return m
+
+    def _get_dynamic_model(self, values):
+        cls = self.dynamic_model(values)
+        self._init_getters(cls)
+
+        return cls
 
     def save_fields(self):
         """Gets list of fields that should be saved."""
         return [field_name for field_name in self.fields.keys() if field_name <> 'id']
 
-    def _no_id_get_model(self, model, values):
-        """This function should be used for files with no ID for records. It is queried
-        using all attributes, if no matching record is found, new instance is created."""
+    def _no_id_get_model(self, values, model_class):
+        """
+        This function should be used for files with no ID for records. It is
+        queried using all attributes, if no matching record is found, new
+        instance is created. If query returns exactly one item, function
+        returns None - item is already in database, there is no need to save it
+        again.
+        """
         values_dict = {}
 
         for f in self.fields.keys():
@@ -161,18 +213,23 @@ class GenericReader(object):
             values_dict[self.db_field[f]] = value
 
         # check whether the model instance exists in the DB
-        instances = model.objects.filter(**values_dict)
+        instances = model_class.objects.filter(**values_dict)
         if instances:
             if len(instances) == 1:
-                m = instances[0]
+                # Instance is in database already, there is no need to store it
+                m = None
             else:
-                raise Exception('Query for ' + model.__class__.__name__ +
+                raise Exception('Query for ' + model_class.__class__.__name__ +
                                 ' with criteria ' + str(values_dict) +
                                 ' returned more than 1 row!')
         else:
-            m = model(**values_dict)
+            m = model_class(**values_dict)
 
         return m
+
+    def has_dynamic_model(self):
+        return self.model is None
+
 
 class OsobaReader(GenericReader):
 
@@ -259,6 +316,7 @@ class FunkceReader(GenericReader):
 class ZarazeniReader(GenericReader):
 
     filename = 'zarazeni.unl'
+    has_id = False
 
     # 2965|644|1|1993-09-15 00||93-09-17|14-03-25|
     fields = {
@@ -269,26 +327,24 @@ class ZarazeniReader(GenericReader):
         'mandat_do': 6,
     }
 
-    def fill_model(self, values):
+    def dynamic_model(self, values):
         """Creates instance of self.model and sets its attributes
         per self.fields definition.
         This is overloaded implementation of generic function
         because we are loading data into 2 tables.
         """
         if values[2] == '0':
-            model = ZarazeniOrgan
+            m = ZarazeniOrgan
             self.fields['organ'] = 1
             if 'funkce' in self.fields:
                 del self.fields['funkce']
         else:
-            model = ZarazeniFunkce
+            m = ZarazeniFunkce
             self.fields['funkce'] = 1
             if 'organ' in self.fields:
                 del self.fields['organ']
 
-        self._init_getters(model)
-
-        return self._no_id_get_model(model, values)
+        return m
 
 class PoslanecReader(GenericReader):
 
@@ -318,6 +374,7 @@ class PkgpsReader(GenericReader):
 
     filename = 'pkgps.unl'
     model = Pkgps
+    has_id = False
 
     # 1091|Masarykova 12/1355; Blansko; 67801|49.2121903|16.3856678|
     fields = {
@@ -327,18 +384,10 @@ class PkgpsReader(GenericReader):
         'sirka': 3,
     }
 
-    def fill_model(self, values):
-        """Creates instance of self.model and sets its attributes
-        per self.fields definition.
-        """
-
-        return self._no_id_get_model(self.model, values)
-
 class HlasovaniReader(GenericReader):
 
     filename = 'hl2010s.unl'
     model = Hlasovani
-    DATUM_RE = re.compile(r'(\d{2})-(\d{2})-(\d{2})(\d{2}):(\d{2})')
 
     # 52621|170|7|10|0|10-10-29|09:08|149|0|7|1|157|79|N|A|Pořad schůze||
     fields = {
@@ -359,16 +408,32 @@ class HlasovaniReader(GenericReader):
         'nazev_kratky': 16,
     }
 
+    DATUM_RE = re.compile(r'(\d{2})-(\d{2})-(\d{2})(\d{2}):(\d{2})')
+
     def fill_model(self, values):
         """Overloads method from GenericReader.fill_model to fill
         field `datum` which is split into 2 fields.
         """
         model = super(HlasovaniReader, self).fill_model(values)
+
         m = self.DATUM_RE.match(values[5] + values[6])
         model.datum = datetime.datetime(int(m.group(1)) + 2000, int(m.group(2)), int(m.group(3)),
             int(m.group(4)), int(m.group(5)), tzinfo=timezone('Europe/Prague'))
 
         return model
+
+class HlasovaniPoslanecReader(GenericReader):
+
+    filename = 'hl2010h.unl'
+    model = HlasovaniPoslanec
+    has_id = False
+
+    # 1088|52361|A|
+    fields = {
+        'poslanec': 0,
+        'hlasovani': 1,
+        'vysledek': 2,
+    }
 
 def import_all(data_dir):
     data_dir = data_dir if data_dir[-1:] == '/' else data_dir + '/'
@@ -382,6 +447,7 @@ def import_all(data_dir):
                      PoslanecReader,
                      PkgpsReader,
                      HlasovaniReader,
+                     HlasovaniPoslanecReader,
                     ]
     # perform reader validation
     for entity in load_entities:

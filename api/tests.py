@@ -134,5 +134,17 @@ class ApiTest(TestCase):
         for att in ['id', 'schuze', 'cislo', 'bod', 'datum', 'pro', 'proti',
                     'zdrzel', 'nehlasoval', 'prihlaseno', 'kvorum',
                     'druh_hlasovani', 'vysledek', 'nazev_dlouhy',
-                    'nazev_kratky', 'url', 'organ_url']:
+                    'nazev_kratky', 'organ_id', 'url', 'organ_url']:
+            self.assertIn(att, obj)
+
+    def test_hlasovani_poslanec(self):
+        response = self.client.get('/api/hlasovani_poslanec/',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/api/hlasovani_poslanec/244/',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        obj = json.loads(response.content)
+        for att in ['id', 'vysledek', 'poslanec_id', 'hlasovani_id', 'url',
+                    'poslanec_url', 'hlasovani_url']:
             self.assertIn(att, obj)

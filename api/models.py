@@ -375,3 +375,38 @@ class Hlasovani(models.Model):
     nazev_kratky = models.CharField(max_length=100, blank=True)
 
     organ = models.ForeignKey(Organ)
+
+class HlasovaniPoslanec(models.Model):
+    """
+    ============  =======  ================================================
+    Sloupec       Typ      Použití a vazby
+    ============  =======  ================================================
+    id_poslanec   int      Identifikátor poslance, viz poslanec:id_poslanec
+    id_hlasovani  int      Identifikátor hlasování,
+                           viz hl_hlasovani:id_hlasovani
+    vysledek      char(X)  Hlasování jednotlivého poslance. 'A' - ano,
+                           'B' - ne, 'C' - zdržel se (stiskl tlačítko X),
+                           'F' - nehlasoval (byl přihlášen, ale nestiskl
+                           žádné tlačítko), '@' - nepřihlášen,
+                           'M' - omluven. Viz úvodní vysvětlení zpracování
+                           výsledků hlasování.
+    ============  =======  ================================================
+
+    """
+    VYSLEDEK_CHOICES = (
+        ('A', 'ano'),
+        ('B', 'ne'),
+        ('C', 'zdržel se'),
+        ('F', 'nehlasoval'),
+        ('@', 'nepřihlášen'),
+        ('M', 'omluven')
+    )
+
+    vysledek = models.CharField(max_length=1)
+
+    poslanec = models.ForeignKey(Poslanec)
+    hlasovani = models.ForeignKey(Hlasovani)
+
+    class Meta:
+        unique_together = (("poslanec", "hlasovani"),
+            )

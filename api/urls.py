@@ -11,6 +11,7 @@ from api.resources import ZarazeniFunkceResource
 from api.resources import PoslanecResource
 from api.resources import PkgpsResource
 from api.resources import HlasovaniResource
+from api.resources import HlasovaniPoslanecResource
 
 urlpatterns = patterns('',
     url(r'^$', ListOrCreateModelView.as_view(resource=OsobaResource), name='osoby-root'),
@@ -34,4 +35,6 @@ urlpatterns = patterns('',
     url(r'^pkgps/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=PkgpsResource), name='pkgps'),
     url(r'^hlasovani/$', ListOrCreateModelView.as_view(resource=HlasovaniResource), name='hlasovani-list'),
     url(r'^hlasovani/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=HlasovaniResource), name='hlasovani'),
+    url(r'^hlasovani_poslanec/$', ListOrCreateModelView.as_view(resource=HlasovaniPoslanecResource), name='hlasovani_poslanec-list'),
+    url(r'^hlasovani_poslanec/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=HlasovaniPoslanecResource), name='hlasovani_poslanec'),
 )
