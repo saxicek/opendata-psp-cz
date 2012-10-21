@@ -10,9 +10,25 @@ class InstanceModelReadOnlyView(ReadModelMixin, ModelView):
     """
     _suffix = 'Instance'
 
-class Sandbox(View):
+class Overview(View):
     """
-    This is the sandbox for all models.
+    Toto je přehled všech modelů, které API poskytuje.
+
+    1. Osoba [osoba]
+    2. Typ orgánu [typ_organu]
+    3. Typ funkce [typ_funkce]
+    4. Orgán [organ]
+    5. Zařazení do orgánu [zarazeni_organ]
+    6. Zařazení do funkce [zarazeni_funkce]
+    7. Poslanec [poslanec]
+    8. GPS souřadnice kanceláří poslanců [pkgps]
+    9. Hlasování [hlasovani]
+    10. Hlasování poslance [hlasovani_poslanec]
+    11. Omluva poslance [omluva]
+    12. Zpochybnění hlasování [zpochybneni]
+    13. Zpochybnění hlasování poslancem [zpochybneni_poslanec]
+    14. Vazba hlasování na stenozáznam [hlasovani_vazba]
+
     """
 
     def get(self, request):

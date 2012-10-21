@@ -1,0 +1,9 @@
+{% extends "djangorestframework/base.html" %}
+
+{# Override this template in your own templates directory to customize #}
+
+{% block title %}Opendata psp.cz - {{ name }}{% endblock %}
+
+{% block extrahead %}<meta http-equiv="Content-Type" content="text/html; charset=utf-8">{% endblock %}
+
+{% block branding %}Opendata psp.cz za použití <a href='http://django-rest-framework.org'>Django REST framework</a> <span class="version"> v {{ version }}</span>{% endblock %}
