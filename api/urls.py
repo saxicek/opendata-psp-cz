@@ -12,6 +12,10 @@ from api.resources import PoslanecResource
 from api.resources import PkgpsResource
 from api.resources import HlasovaniResource
 from api.resources import HlasovaniPoslanecResource
+from api.resources import OmluvaResource
+from api.resources import ZpochybneniResource
+from api.resources import ZpochybneniPoslanecResource
+from api.resources import HlasovaniVazbyResource
 
 urlpatterns = patterns('',
     url(r'^$', ListOrCreateModelView.as_view(resource=OsobaResource), name='osoby-root'),
@@ -37,4 +41,12 @@ urlpatterns = patterns('',
     url(r'^hlasovani/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=HlasovaniResource), name='hlasovani'),
     url(r'^hlasovani_poslanec/$', ListOrCreateModelView.as_view(resource=HlasovaniPoslanecResource), name='hlasovani_poslanec-list'),
     url(r'^hlasovani_poslanec/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=HlasovaniPoslanecResource), name='hlasovani_poslanec'),
+    url(r'^omluva/$', ListOrCreateModelView.as_view(resource=OmluvaResource), name='omluvy'),
+    url(r'^omluva/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=OmluvaResource), name='omluva'),
+    url(r'^zpochybneni/$', ListOrCreateModelView.as_view(resource=ZpochybneniResource), name='zpochybneni-list'),
+    url(r'^zpochybneni/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=ZpochybneniResource), name='zpochybneni'),
+    url(r'^zpochybneni_poslanec/$', ListOrCreateModelView.as_view(resource=ZpochybneniPoslanecResource), name='zpochybneni_poslanec-list'),
+    url(r'^zpochybneni_poslanec/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=ZpochybneniPoslanecResource), name='zpochybneni_poslanec'),
+    url(r'^hlasovani_vazby/$', ListOrCreateModelView.as_view(resource=HlasovaniVazbyResource), name='hlasovani_vazby-list'),
+    url(r'^hlasovani_vazby/(?P<id>[^/]+)/$', InstanceModelView.as_view(resource=HlasovaniVazbyResource), name='hlasovani_vazby'),
 )

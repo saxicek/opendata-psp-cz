@@ -148,3 +148,50 @@ class ApiTest(TestCase):
         for att in ['id', 'vysledek', 'poslanec_id', 'hlasovani_id', 'url',
                     'poslanec_url', 'hlasovani_url']:
             self.assertIn(att, obj)
+
+    def test_omluva(self):
+        response = self.client.get('/api/omluva/',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/api/omluva/13185/',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        obj = json.loads(response.content)
+        for att in ['od', 'do', 'organ_id', 'poslanec_id', 'url', 'organ_url',
+                    'poslanec_url']:
+            self.assertIn(att, obj)
+
+    def test_zpochybneni(self):
+        response = self.client.get('/api/zpochybneni/',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/api/zpochybneni/5/',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        obj = json.loads(response.content)
+        for att in ['turn', 'mode', 'hlasovani_id', 'h2_id', 'h3_id', 'url',
+                    'hlasovani_url', 'h2_url', 'h3_url']:
+            self.assertIn(att, obj)
+
+    def test_zpochybneni_poslanec(self):
+        response = self.client.get('/api/zpochybneni_poslanec/',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/api/zpochybneni_poslanec/4/',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        obj = json.loads(response.content)
+        for att in ['mode', 'hlasovani_id', 'osoba_id', 'url', 'hlasovani_url',
+                    'osoba_url']:
+            self.assertIn(att, obj)
+
+    def test_hlasovani_vazby(self):
+        response = self.client.get('/api/hlasovani_vazby/',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/api/hlasovani_vazby/2/',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        obj = json.loads(response.content)
+        for att in ['turn', 'typ', 'hlasovani_id', 'url', 'hlasovani_url']:
+            self.assertIn(att, obj)

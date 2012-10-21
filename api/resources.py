@@ -11,6 +11,10 @@ from api.models import Poslanec
 from api.models import Pkgps
 from api.models import Hlasovani
 from api.models import HlasovaniPoslanec
+from api.models import Omluva
+from api.models import Zpochybneni
+from api.models import ZpochybneniPoslanec
+from api.models import HlasovaniVazby
 
 class OsobaResource(ModelResource):
     model = Osoba
@@ -228,6 +232,85 @@ class HlasovaniPoslanecResource(ModelResource):
     def poslanec_url(self, instance):
         return reverse('poslanec',
             kwargs={'id': instance.poslanec_id},
+            request=self.request)
+
+    def hlasovani_url(self, instance):
+        return reverse('hlasovani',
+            kwargs={'id': instance.hlasovani_id},
+            request=self.request)
+
+class OmluvaResource(ModelResource):
+    model = Omluva
+    fields = ('od', 'do', 'organ_id', 'poslanec_id', 'url', 'organ_url',
+              'poslanec_url')
+
+    def url(self, instance):
+        return reverse('omluva',
+            kwargs={'id': instance.id},
+            request=self.request)
+
+    def poslanec_url(self, instance):
+        return reverse('poslanec',
+            kwargs={'id': instance.poslanec_id},
+            request=self.request)
+
+    def organ_url(self, instance):
+        return reverse('organ',
+            kwargs={'id': instance.organ_id},
+            request=self.request)
+
+class ZpochybneniResource(ModelResource):
+    model = Zpochybneni
+    fields = ('turn', 'mode', 'hlasovani_id', 'h2_id', 'h3_id', 'url',
+              'hlasovani_url', 'h2_url', 'h3_url')
+
+    def url(self, instance):
+        return reverse('zpochybneni',
+            kwargs={'id': instance.id},
+            request=self.request)
+
+    def hlasovani_url(self, instance):
+        return reverse('hlasovani',
+            kwargs={'id': instance.hlasovani_id},
+            request=self.request)
+
+    def h2_url(self, instance):
+        return reverse('hlasovani',
+            kwargs={'id': instance.h2_id},
+            request=self.request)
+
+    def h3_url(self, instance):
+        return reverse('hlasovani',
+            kwargs={'id': instance.h3_id},
+            request=self.request)
+
+class ZpochybneniPoslanecResource(ModelResource):
+    model = ZpochybneniPoslanec
+    fields = ('mode', 'hlasovani_id', 'osoba_id', 'url', 'hlasovani_url',
+              'osoba_url')
+
+    def url(self, instance):
+        return reverse('zpochybneni_poslanec',
+            kwargs={'id': instance.id},
+            request=self.request)
+
+    def hlasovani_url(self, instance):
+        return reverse('hlasovani',
+            kwargs={'id': instance.hlasovani_id},
+            request=self.request)
+
+    def osoba_url(self, instance):
+        return reverse('osoba',
+            kwargs={'id': instance.osoba_id},
+            request=self.request)
+
+class HlasovaniVazbyResource(ModelResource):
+    model = HlasovaniVazby
+    fields = ('turn', 'typ', 'hlasovani_id', 'url', 'hlasovani_url')
+
+    def url(self, instance):
+        return reverse('hlasovani_vazby',
+            kwargs={'id': instance.id},
             request=self.request)
 
     def hlasovani_url(self, instance):

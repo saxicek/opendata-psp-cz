@@ -22,7 +22,7 @@ class Osoba(models.Model):
     """
     POHLAVI_CHOICES = (
         ('M', 'Muž'),
-        ('Ž', 'Žena'),               
+        ('Ž', 'Žena'),
     )
 
     titul_pred = models.CharField(max_length=100, blank=True)
@@ -83,7 +83,7 @@ class TypFunkce(models.Model):
     """
     OBECNY_TYP_CHOICES = (
         (1, 'předseda'),
-        (2, 'místopředseda'),               
+        (2, 'místopředseda'),
     )
 
     typ_funkce_cz = models.CharField(max_length=100)
@@ -410,3 +410,100 @@ class HlasovaniPoslanec(models.Model):
     class Meta:
         unique_together = (("poslanec", "hlasovani"),
             )
+
+class Omluva(models.Model):
+    """
+    ===========  ========================  ================================
+    Sloupec      Typ                       Použití a vazby
+    ===========  ========================  ================================
+    id_organ     int                       Identifikátor volebního období,
+                                            viz organy:id_organ
+    id_poslanec  int                       Identifikátor poslance, viz
+                                           poslanec:id_poslanec
+    den          date                      Datum omluvy
+    od           datetime(hour to minute)  Čas začátku omluvy, pokud je
+                                           null, pak i omluvy:do je null a
+                                           jedná se o omluvu na celý
+                                           jednací den.
+    do           datetime(hour to minute)  Čas konce omluvy, pokud je null,
+                                           pak i omluvy:od je null a jedná
+                                           se o omluvu na celý jednací den.
+    ===========  ========================  ================================
+
+    """
+    od = models.DateTimeField()
+    do = models.DateTimeField()
+
+    organ = models.ForeignKey(Organ)
+    poslanec = models.ForeignKey(Poslanec)
+
+class Zpochybneni(models.Model):
+    """
+    ============  ===  ====================================================
+    Sloupec       Typ  Použití a vazby
+    ============  ===  ====================================================
+    id_hlasovani  int  Identifikátor  hlasování, viz
+                       hl_hlasovani:id_hlasovani, které bylo zpochybněno.
+    turn          int  Číslo stenozáznamu, ve kterém je první zmínka
+                       o zpochybnění hlasování.
+    mode          int  Typ zpochybnění: 0 - žádost o opakování hlasování -
+                       v tomto případě se o této žádosti neprodleně hlasuje
+                       a teprve je-li tato žádost přijata, je hlasování
+                       opakováno; 1 - pouze sdělení pro stenozáznam, není
+                       požadováno opakování hlasování.
+    id_h2         int  Identifikátor hlasování o žádosti o opakování
+                       hlasování, viz hl_hlasovani:id_hlasovani.
+                       Zaznamenává se poslední takové, které nebylo
+                       zpochybněno.
+    id_h3         int  Identifikátor opakovaného hlasování, viz
+                       hl_hlasovani:id_hlasovani a hl_check:id_hlasovani.
+                       Zaznamenává se poslední takové, které nebylo
+                       zpochybněno.
+    ============  ===  ====================================================
+    """
+    turn = models.IntegerField()
+    mode = models.IntegerField()
+
+    hlasovani = models.ForeignKey(Hlasovani)
+    h2 = models.ForeignKey(Hlasovani, null=True,
+                           related_name='zpochybneni_zadost')
+    h3 = models.ForeignKey(Hlasovani, null=True,
+                           related_name='zpochybneni_opakovani')
+
+class ZpochybneniPoslanec(models.Model):
+    """
+    ============  ===  ====================================================
+    Sloupec       Typ  Použití a vazby
+    ============  ===  ====================================================
+    id_hlasovani  int  Identifikátor hlasování, viz
+                       hl_hlasovani:id_hlasovani a hl_check:id_hlasovani,
+                       které bylo zpochybněno.
+    id_osoba      int  Identifikátor poslance, který zpochybnil hlasování;
+                       viz osoby:id_osoba.
+    mode          int  Typ zpochybnění, viz hl_check:mode.
+    ============  ===  ====================================================
+    """
+    mode = models.IntegerField()
+
+    hlasovani = models.ForeignKey(Hlasovani)
+    osoba = models.ForeignKey(Osoba)
+
+class HlasovaniVazby(models.Model):
+    """
+    ============  ===  ====================================================
+    Sloupec       Typ  Použití a vazby
+    ============  ===  ====================================================
+    id_hlasovani  int  Identifikátor hlasování, viz
+                       hl_hlasovani:id_hlasovani
+    turn          int  Číslo stenozáznamu
+    typ           int  Typ vazby: 0 - hlasování je v textu explicitně
+                       zmíněno a lze tedy vytvořit odkaz přímo na začátek
+                       hlasování, 1 - hlasování není v textu explicitně
+                       zmíněno, odkaz lze vytvořit pouze na stenozáznam
+                       jako celek.
+    ============  ===  ====================================================
+    """
+    turn = models.IntegerField()
+    typ = models.IntegerField()
+
+    hlasovani = models.ForeignKey(Hlasovani)

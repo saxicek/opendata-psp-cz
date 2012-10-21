@@ -18,10 +18,18 @@ from api.models import ZarazeniFunkce
 from api.models import Pkgps
 from api.models import Hlasovani
 from api.models import HlasovaniPoslanec
+from api.models import Omluva
+from api.models import Zpochybneni
+from api.models import ZpochybneniPoslanec
+from api.models import HlasovaniVazby
 
-DATETIME_RE = re.compile(r'(\d{4})-(\d{2})-(\d{2}) (\d{2})')
+DATETIME_RE = re.compile(r'(\d{2})-(\d{2})-(\d{2}) (\d{2}):(\d{2})')
+FULL_DATETIME_RE = re.compile(r'(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})')
+SHORT_DATETIME_RE = re.compile(r'(\d{4})-(\d{2})-(\d{2}) (\d{2})')
 DATE_RE = re.compile(r'(\d{2})\.(\d{2})\.(\d{4})')
 SHORT_DATE_RE = re.compile(r'(\d{2})-(\d{2})-(\d{2})')
+
+tz = timezone('Europe/Prague')
 
 def _d(date_str):
     """Returns datetime.date from string YY-MM-DD or DD.MM.YYYY"""
@@ -44,10 +52,30 @@ def _dt(datetime_str):
     """Returns datetime.datetime from string YY-MM-DD HH"""
     if not datetime_str:
         return None
-    m = DATETIME_RE.match(datetime_str)
+    m = SHORT_DATETIME_RE.match(datetime_str)
+    if m:
+        dt = datetime.datetime(
+            int(m.group(1)), int(m.group(2)), int(m.group(3)),
+            int(m.group(4)))
 
-    return datetime.datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)),
-                             int(m.group(4)), tzinfo=timezone('Europe/Prague'))
+    m = DATETIME_RE.match(datetime_str)
+    if m:
+        year = int(m.group(1)) + 1900 if int(m.group(1)) > 12 else int(m.group(1)) + 2000
+        dt = datetime.datetime(
+            year, int(m.group(2)), int(m.group(3)),
+            int(m.group(4)), int(m.group(5)))
+
+    m = FULL_DATETIME_RE.match(datetime_str)
+    if m:
+        dt = datetime.datetime(
+            int(m.group(1)), int(m.group(2)), int(m.group(3)),
+            int(m.group(4)), int(m.group(5)))
+
+    if dt:
+        return tz.localize(dt)
+    else:
+        print 'String |' + datetime_str + '| does not match any supported date format!'
+        return None
 
 def _i(int_str):
     """Returns int from string"""
@@ -116,6 +144,16 @@ class GenericReader(object):
         """
         return None
 
+    def process_values(self, values):
+        """
+        Method suitable for overloading. It can transform values parsed from
+        row to match custom needs - for example join 2 original columns into
+        one.
+        NOTE: values contains newline character as the last value. Do not forget
+              it when setting position for artificial fields.
+        """
+        return values
+
     def _init_getters(self, model_class):
         self.getter = {}
         self.db_field = {}
@@ -153,8 +191,10 @@ class GenericReader(object):
                         previous_line = line[:-3] + ' '
                     else:
                         previous_line = ''
+                        # transform input values if needed
+                        values = self.process_values(line.split('|'))
                         # map the line to model
-                        model = self.fill_model(line.split('|'))
+                        model = self.fill_model(values)
                         if model:
                             model.save()
                         # count record even if it has not been saved - it is in
@@ -406,21 +446,16 @@ class HlasovaniReader(GenericReader):
         'vysledek': 14,
         'nazev_dlouhy': 15,
         'nazev_kratky': 16,
+        # custom value
+        'datum': 18,
     }
 
-    DATUM_RE = re.compile(r'(\d{2})-(\d{2})-(\d{2})(\d{2}):(\d{2})')
-
-    def fill_model(self, values):
-        """Overloads method from GenericReader.fill_model to fill
-        field `datum` which is split into 2 fields.
+    def process_values(self, values):
         """
-        model = super(HlasovaniReader, self).fill_model(values)
-
-        m = self.DATUM_RE.match(values[5] + values[6])
-        model.datum = datetime.datetime(int(m.group(1)) + 2000, int(m.group(2)), int(m.group(3)),
-            int(m.group(4)), int(m.group(5)), tzinfo=timezone('Europe/Prague'))
-
-        return model
+        Joins datum and čas fields into one.
+        """
+        values.append(values[5] + ' ' + values[6])
+        return values
 
 class HlasovaniPoslanecReader(GenericReader):
 
@@ -433,6 +468,75 @@ class HlasovaniPoslanecReader(GenericReader):
         'poslanec': 0,
         'hlasovani': 1,
         'vysledek': 2,
+    }
+
+class OmluvaReader(GenericReader):
+
+    filename = 'omluvy.unl'
+    model = Omluva
+    has_id = False
+
+    # 167|571|02-02-13|09:30|23:59|
+    fields = {
+        'organ': 0,
+        'poslanec': 1,
+        # custom value
+        'od': 6,
+        'do': 7,
+    }
+
+    def process_values(self, values):
+        """
+        Joins fields `den`, `od` and `do`. It follows similar logic like
+        original except that both fields are always set. If justification is
+        valid for the whole day then the interval is explicitly set from
+        midnight to midnight.
+        """
+        od = values[3] if values[3] != '' else '00:00'
+        do = values[4] if values[4] != '' else '23:59'
+        values.append(values[2] + ' ' + od)
+        values.append(values[2] + ' ' + do)
+        return values
+
+class ZpochybneniReader(GenericReader):
+
+    filename = 'hl2010z.unl'
+    model = Zpochybneni
+    has_id = False
+
+    # 55680|67|0|55681|55682|
+    fields = {
+        'hlasovani': 0,
+        'turn': 1,
+        'mode': 2,
+        'h2': 3,
+        'h3': 4,
+    }
+
+class ZpochybneniPoslanecReader(GenericReader):
+
+    filename = 'hl2010x.unl'
+    model = ZpochybneniPoslanec
+    has_id = False
+
+    # 55680|5971|0|
+    fields = {
+        'hlasovani': 0,
+        'osoba': 1,
+        'mode': 2,
+    }
+
+class HlasovaniVazbyReader(GenericReader):
+
+    filename = 'hl2010v.unl'
+    model = HlasovaniVazby
+    has_id = False
+
+    # 52361|6|0|
+    fields = {
+        'hlasovani': 0,
+        'turn': 1,
+        'typ': 2,
     }
 
 def import_all(data_dir):
@@ -448,6 +552,10 @@ def import_all(data_dir):
                      PkgpsReader,
                      HlasovaniReader,
                      HlasovaniPoslanecReader,
+                     OmluvaReader,
+                     ZpochybneniReader,
+                     ZpochybneniPoslanecReader,
+                     HlasovaniVazbyReader,
                     ]
     # perform reader validation
     for entity in load_entities:
