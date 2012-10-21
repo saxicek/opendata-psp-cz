@@ -1,8 +1,6 @@
+# coding=utf-8
 """
-This file demonstrates writing tests using the unittest module. These will pass
-when you run "manage.py test".
-
-Replace this with more appropriate tests for your application.
+Test suite for API.
 """
 
 from django.test import TestCase
@@ -12,9 +10,11 @@ class ApiTest(TestCase):
     fixtures = ['api_test_data.json']
 
     def test_osoba(self):
+        # get list of all instances
         response = self.client.get('/api/osoba/',
                                    HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code, 200)
+        # get one instance
         response = self.client.get('/api/osoba/5990/',
                                    HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code, 200)
@@ -22,6 +22,26 @@ class ApiTest(TestCase):
         for att in ['id', 'titul_pred', 'jmeno', 'prijmeni', 'titul_za',
                     'narozeni', 'pohlavi', 'zmena', 'umrti', 'url']:
             self.assertIn(att, obj)
+
+        # update instance - disabled
+        response = self.client.put(
+            '/api/osoba/5990/',
+            {"jmeno": "Janina", "titul_za": "CSc.", "titul_pred": "Ing.",
+             "pohlavi": "Ž", "prijmeni": "Fischerová",
+             "narozeni": "1955-08-20"})
+        self.assertEqual(response.status_code, 405)
+
+        # delete instance - disabled
+        response = self.client.delete('/api/osoba/5990/')
+        self.assertEqual(response.status_code, 405)
+
+        # create instance = disabled
+        response = self.client.post(
+            '/api/osoba/',
+            {"jmeno": "Janina", "titul_za": "CSc.", "titul_pred": "Ing.",
+             "pohlavi": "Ž", "prijmeni": "Fischerová",
+             "narozeni": "1955-08-20"})
+        self.assertEqual(response.status_code, 405)
 
     def test_typ_organu(self):
         response = self.client.get('/api/typ_organu/',

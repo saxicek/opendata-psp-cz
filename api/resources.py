@@ -1,5 +1,6 @@
 from djangorestframework.resources import ModelResource
 from djangorestframework.reverse import reverse
+
 from api.models import Osoba
 from api.models import TypOrganu
 from api.models import TypFunkce

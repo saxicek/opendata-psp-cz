@@ -21,18 +21,18 @@ class Osoba(models.Model):
 
     """
     POHLAVI_CHOICES = (
-        ('M', 'Muž'),
-        ('Ž', 'Žena'),
+        (u'M', 'muž'),
+        (u'Ž', 'žena'),
     )
 
     titul_pred = models.CharField(max_length=100, blank=True)
     jmeno = models.CharField(max_length=100)
     prijmeni = models.CharField(max_length=100)
     titul_za = models.CharField(max_length=100, blank=True)
-    narozeni = models.DateField(null=True)
+    narozeni = models.DateField(null=True, blank=True)
     pohlavi = models.CharField(max_length=1, choices = POHLAVI_CHOICES)
-    zmena = models.DateField(null=True)
-    umrti = models.DateField(null=True)
+    zmena = models.DateField(null=True, blank=True)
+    umrti = models.DateField(null=True, blank=True)
 
 class TypOrganu(models.Model):
     """
@@ -57,11 +57,11 @@ class TypOrganu(models.Model):
     """
     nazev_typ_org_cz = models.CharField(max_length=100)
     nazev_typ_org_en = models.CharField(max_length=100, blank=True)
-    priorita = models.IntegerField(null=True)
+    priorita = models.IntegerField(null=True, blank=True)
 
-    nadrazeny_typ = models.ForeignKey('TypOrganu', null=True,
+    nadrazeny_typ = models.ForeignKey('self', null=True, blank=True,
                                       related_name='detailni_typy')
-    obecny_typ = models.ForeignKey('TypOrganu', null=True,
+    obecny_typ = models.ForeignKey('self', null=True, blank=True,
                                    related_name='specificke_typy')
 
 class TypFunkce(models.Model):
@@ -88,8 +88,8 @@ class TypFunkce(models.Model):
 
     typ_funkce_cz = models.CharField(max_length=100)
     typ_funkce_en = models.CharField(max_length=100, blank=True)
-    priorita = models.IntegerField(null=True)
-    obecny_typ = models.IntegerField(null=True,
+    priorita = models.IntegerField(null=True, blank=True)
+    obecny_typ = models.IntegerField(null=True, blank=True,
                                      choices = OBECNY_TYP_CHOICES)
 
     typ_organu = models.ForeignKey(TypOrganu)
@@ -124,12 +124,12 @@ class Organ(models.Model):
     zkratka = models.CharField(max_length=100)
     nazev_organu_cz = models.CharField(max_length=1000)
     nazev_organu_en = models.CharField(max_length=1000)
-    od_organ = models.DateField(null=True)
-    do_organ = models.DateField(null=True)
-    priorita = models.IntegerField(null=True)
-    cl_organ_base = models.IntegerField(null=True)
+    od_organ = models.DateField(null=True, blank=True)
+    do_organ = models.DateField(null=True, blank=True)
+    priorita = models.IntegerField(null=True, blank=True)
+    cl_organ_base = models.IntegerField(null=True, blank=True)
 
-    organ = models.ForeignKey('Organ', null=True,
+    organ = models.ForeignKey('self', null=True, blank=True,
                               related_name='podorgany')
     typ_organu = models.ForeignKey(TypOrganu)
 
@@ -149,7 +149,7 @@ class Funkce(models.Model):
 
     """
     nazev_funkce_cz = models.CharField(max_length=100)
-    priorita = models.IntegerField(null=True)
+    priorita = models.IntegerField(null=True, blank=True)
 
     organ = models.ForeignKey(Organ)
     typ_funkce = models.ForeignKey(TypFunkce)
@@ -191,9 +191,9 @@ class ZarazeniOrgan(models.Model):
 
     """
     zarazeni_od = models.DateTimeField()
-    zarazeni_do = models.DateTimeField(null=True)
-    mandat_od = models.DateField(null=True)
-    mandat_do = models.DateField(null=True)
+    zarazeni_do = models.DateTimeField(null=True, blank=True)
+    mandat_od = models.DateField(null=True, blank=True)
+    mandat_do = models.DateField(null=True, blank=True)
 
     osoba = models.ForeignKey(Osoba)
     organ = models.ForeignKey(Organ)
@@ -235,9 +235,9 @@ class ZarazeniFunkce(models.Model):
 
     """
     zarazeni_od = models.DateTimeField()
-    zarazeni_do = models.DateTimeField(null=True)
-    mandat_od = models.DateField(null=True)
-    mandat_do = models.DateField(null=True)
+    zarazeni_do = models.DateTimeField(null=True, blank=True)
+    mandat_od = models.DateField(null=True, blank=True)
+    mandat_do = models.DateField(null=True, blank=True)
 
     osoba = models.ForeignKey(Osoba)
     funkce = models.ForeignKey(Funkce)
@@ -285,7 +285,7 @@ class Poslanec(models.Model):
     osoba = models.ForeignKey(Osoba)
     kraj = models.ForeignKey(Organ,
                              related_name='poslanci_kraje')
-    kandidatka = models.ForeignKey(Organ, null=True,
+    kandidatka = models.ForeignKey(Organ, null=True, blank=True,
                                    related_name='poslanci_strany')
     obdobi = models.ForeignKey(Organ,
                                related_name='poslanci_obdobi')
@@ -465,9 +465,9 @@ class Zpochybneni(models.Model):
     mode = models.IntegerField()
 
     hlasovani = models.ForeignKey(Hlasovani)
-    h2 = models.ForeignKey(Hlasovani, null=True,
+    h2 = models.ForeignKey(Hlasovani, null=True, blank=True,
                            related_name='zpochybneni_zadost')
-    h3 = models.ForeignKey(Hlasovani, null=True,
+    h3 = models.ForeignKey(Hlasovani, null=True, blank=True,
                            related_name='zpochybneni_opakovani')
 
 class ZpochybneniPoslanec(models.Model):
