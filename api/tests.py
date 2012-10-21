@@ -206,10 +206,10 @@ class ApiTest(TestCase):
             self.assertIn(att, obj)
 
     def test_hlasovani_vazby(self):
-        response = self.client.get('/api/hlasovani_vazby/',
+        response = self.client.get('/api/hlasovani_vazba/',
             HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code, 200)
-        response = self.client.get('/api/hlasovani_vazby/2/',
+        response = self.client.get('/api/hlasovani_vazba/2/',
             HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code, 200)
         obj = json.loads(response.content)

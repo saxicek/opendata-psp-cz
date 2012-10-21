@@ -1,4 +1,5 @@
 from django.conf.urls import patterns, url
+from djangorestframework.views import ListModelView
 
 from api.resources import OsobaResource
 from api.resources import TypOrganuResource
@@ -15,10 +16,11 @@ from api.resources import OmluvaResource
 from api.resources import ZpochybneniResource
 from api.resources import ZpochybneniPoslanecResource
 from api.resources import HlasovaniVazbyResource
-from api.views import ListModelView, InstanceModelReadOnlyView
+from api.views import InstanceModelReadOnlyView
+from api.views import Sandbox
 
 urlpatterns = patterns('',
-    url(r'^$', ListModelView.as_view(resource=OsobaResource), name='osoby-root'),
+    url(r'^$', Sandbox.as_view()),
     url(r'^osoba/$', ListModelView.as_view(resource=OsobaResource), name='osoby'),
     url(r'^osoba/(?P<id>[^/]+)/$', InstanceModelReadOnlyView.as_view(resource=OsobaResource), name='osoba'),
     url(r'^typ_organu/$', ListModelView.as_view(resource=TypOrganuResource), name='typy_organu'),
@@ -47,6 +49,6 @@ urlpatterns = patterns('',
     url(r'^zpochybneni/(?P<id>[^/]+)/$', InstanceModelReadOnlyView.as_view(resource=ZpochybneniResource), name='zpochybneni'),
     url(r'^zpochybneni_poslanec/$', ListModelView.as_view(resource=ZpochybneniPoslanecResource), name='zpochybneni_poslanec-list'),
     url(r'^zpochybneni_poslanec/(?P<id>[^/]+)/$', InstanceModelReadOnlyView.as_view(resource=ZpochybneniPoslanecResource), name='zpochybneni_poslanec'),
-    url(r'^hlasovani_vazby/$', ListModelView.as_view(resource=HlasovaniVazbyResource), name='hlasovani_vazby-list'),
-    url(r'^hlasovani_vazby/(?P<id>[^/]+)/$', InstanceModelReadOnlyView.as_view(resource=HlasovaniVazbyResource), name='hlasovani_vazby'),
+    url(r'^hlasovani_vazba/$', ListModelView.as_view(resource=HlasovaniVazbyResource), name='hlasovani_vazby'),
+    url(r'^hlasovani_vazba/(?P<id>[^/]+)/$', InstanceModelReadOnlyView.as_view(resource=HlasovaniVazbyResource), name='hlasovani_vazba'),
 )

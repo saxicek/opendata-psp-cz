@@ -310,7 +310,7 @@ class HlasovaniVazbyResource(ModelResource):
     fields = ('turn', 'typ', 'hlasovani_id', 'url', 'hlasovani_url')
 
     def url(self, instance):
-        return reverse('hlasovani_vazby',
+        return reverse('hlasovani_vazba',
             kwargs={'id': instance.id},
             request=self.request)
 
