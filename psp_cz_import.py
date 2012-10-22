@@ -24,11 +24,14 @@ class PspCzImport(object):
 
     def unzip_files(self):
         for file in self.files.keys():
-            with ZipFile(self.data_dir + file) as zip:
+            zip = ZipFile(self.data_dir + file)
+            try:
                 # FIXME: this is potentially dangerous, should check the
                 #        zip does not use absolute paths or ..
                 print 'Extracting ' + file
                 zip.extractall(self.data_dir)
+            finally:
+                zip.close()
 
     def all(self):
         """
