@@ -6,6 +6,7 @@ from decimal import Decimal
 import datetime
 import time
 import re
+import logging
 
 from api.models import Osoba
 from api.models import Poslanec
@@ -45,7 +46,7 @@ def _d(date_str):
         year = int(m.group(1)) + 1900 if int(m.group(1)) > 12 else int(m.group(1)) + 2000
         return datetime.date(year, int(m.group(2)), int(m.group(3)))
 
-    print 'String |' + date_str + '| does not match any supported date format!'
+    logging.error('String |' + date_str + '| does not match any supported date format!')
     return None
 
 def _dt(datetime_str):
@@ -74,7 +75,7 @@ def _dt(datetime_str):
     if dt:
         return tz.localize(dt)
     else:
-        print 'String |' + datetime_str + '| does not match any supported date format!'
+        logging.error('String |' + datetime_str + '| does not match any supported date format!')
         return None
 
 def _i(int_str):
@@ -202,13 +203,17 @@ class GenericReader(object):
                         self.record_count += 1
 
         if not self.has_dynamic_model():
-            print 'File ' + self.filename +\
-                  ' successfully loaded (%d records in %.03f sec; %d records in DB).'\
-                  % (self.record_count, t.interval, self.model.objects.count())
+            logging.info(
+                'File ' + self.filename +\
+                ' successfully loaded (%d records in %.03f sec; %d records in DB).'\
+                % (self.record_count, t.interval, self.model.objects.count())
+            )
         else:
-            print 'File ' + self.filename +\
-                  ' successfully loaded (%d records in %.03f sec).'\
-                  % (self.record_count, t.interval)
+            logging.info(
+                'File ' + self.filename +\
+                ' successfully loaded (%d records in %.03f sec).'\
+                % (self.record_count, t.interval)
+            )
 
     def fill_model(self, values):
         """Creates instance of self.model and sets its attributes

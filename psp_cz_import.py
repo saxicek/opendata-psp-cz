@@ -1,5 +1,6 @@
 import urllib
 import os
+import logging
 from importer.psp_cz import import_all
 from optparse import OptionParser
 from zipfile import ZipFile
@@ -16,7 +17,7 @@ class PspCzImport(object):
 
     def download_files(self):
         for file, url in self.files.iteritems():
-            print 'Downloading ' + url
+            logging.info('Downloading ' + url)
             file_path = self.data_dir + file
             if os.access(file_path, os.F_OK):
                 os.remove(file_path)
@@ -28,7 +29,7 @@ class PspCzImport(object):
             try:
                 # FIXME: this is potentially dangerous, should check the
                 #        zip does not use absolute paths or ..
-                print 'Extracting ' + file
+                logging.info('Extracting ' + file)
                 zip.extractall(self.data_dir)
             finally:
                 zip.close()
@@ -40,10 +41,15 @@ class PspCzImport(object):
         """
         self.download_files()
         self.unzip_files()
-        print 'Starting import of the files...'
+        logging.info('Starting import of the files...')
         import_all(self.data_dir)
 
 def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     parser = OptionParser()
     parser.add_option("-d", "--dir", dest="data_dir",
                       help="directory with psp.cz export files")
