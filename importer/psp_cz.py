@@ -27,6 +27,8 @@ from api.models import HlasovaniVazby
 DATETIME_RE = re.compile(r'(\d{2})-(\d{2})-(\d{2}) (\d{2}):(\d{2})')
 FULL_DATETIME_RE = re.compile(r'(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})')
 SHORT_DATETIME_RE = re.compile(r'(\d{4})-(\d{2})-(\d{2}) (\d{2})')
+FULL_DATETIME_RE_CS_cz = re.compile(r'(\d{2}).(\d{2}).(\d{4}) (\d{2}):(\d{2})')
+
 DATE_RE = re.compile(r'(\d{2})\.(\d{2})\.(\d{4})')
 SHORT_DATE_RE = re.compile(r'(\d{2})-(\d{2})-(\d{2})')
 
@@ -50,9 +52,16 @@ def _d(date_str):
     return None
 
 def _dt(datetime_str):
-    """Returns datetime.datetime from string YY-MM-DD HH"""
+    """Returns datetime.datetime from string (several formats supported)."""
     if not datetime_str:
         return None
+    dt = None
+    m = FULL_DATETIME_RE_CS_cz.match(datetime_str)
+    if m:
+        dt = datetime.datetime(
+            int(m.group(3)), int(m.group(2)), int(m.group(1)),
+            int(m.group(4)))
+
     m = SHORT_DATETIME_RE.match(datetime_str)
     if m:
         dt = datetime.datetime(
